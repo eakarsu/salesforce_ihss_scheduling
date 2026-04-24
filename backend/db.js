@@ -1,0 +1,10 @@
+const { Pool } = require('pg');
+require('dotenv').config({ path: __dirname + '/../.env' });
+const pool = new Pool({
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'lowes_install_scheduling',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgres',
+});
+module.exports = pool;
