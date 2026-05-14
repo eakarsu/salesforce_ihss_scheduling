@@ -29,6 +29,10 @@ app.use('/api/assets', require('./routes/assets'));
 app.use('/api/maintenance-plans', require('./routes/maintenancePlans'));
 app.use('/api/scheduling-policies', require('./routes/schedulingPolicies'));
 app.use('/api/scheduling', require('./routes/scheduling'));
+app.use('/api/ai', require('./routes/ai'));
+app.use('/api/ai-extras', require('./routes/ai-extras'));
 
 const PORT = process.env.BACKEND_PORT || 4003;
+app.use('/api', require('./routes/gap-features')); // === Batch 11 Gaps & Frontend Mounts ===
+
 app.listen(PORT, () => console.log(`Lowe's Install Services Backend running on port ${PORT}`));

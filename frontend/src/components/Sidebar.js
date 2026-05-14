@@ -182,6 +182,22 @@ export default function Sidebar({ features, onLogout }) {
           </span>
         </Link>
 
+        <Link
+          to="/ai-advisors"
+          style={{
+            ...linkStyle(isActive('ai-advisors'), '#10b981', hoveredItem === 'ai-advisors'),
+            marginTop: 4,
+          }}
+          title="AI Advisors"
+          onMouseEnter={() => setHoveredItem('ai-advisors')}
+          onMouseLeave={() => setHoveredItem(null)}
+        >
+          <span style={{ fontSize: 16, flexShrink: 0, width: 20, textAlign: 'center' }}>{'✨'}</span>
+          <span style={{ opacity: collapsed ? 0 : 1, transition: 'opacity 0.2s ease' }}>
+            AI Advisors
+          </span>
+        </Link>
+
         {/* Feature groups */}
         {groups.map((group) => {
           const groupFeatures = group.keys

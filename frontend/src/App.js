@@ -1,9 +1,19 @@
+// === Batch 11 Gaps & Frontend Mounts ===
+import GapClientNoshowPredictionPage from './pages/gap/GapClientNoshowPredictionPage'
+import GapWorkforceAttritionPage from './pages/gap/GapWorkforceAttritionPage'
+import GapIncidentSummarizerPage from './pages/gap/GapIncidentSummarizerPage'
+import GapMobileRnClientPage from './pages/gap/GapMobileRnClientPage'
+import GapClientPortalPage from './pages/gap/GapClientPortalPage'
+import GapPayrollConnectorPage from './pages/gap/GapPayrollConnectorPage'
+import GapComplianceTrackerPage from './pages/gap/GapComplianceTrackerPage'
+import GapRateAnalyticsPage from './pages/gap/GapRateAnalyticsPage'
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import FeaturePage from './pages/FeaturePage';
 import SchedulingPage from './pages/SchedulingPage';
+import AIAdvisors from './pages/AIAdvisors';
 import Sidebar from './components/Sidebar';
 
 const features = [
@@ -230,6 +240,16 @@ function AppLayout() {
         <Routes>
           <Route path="/" element={<Dashboard features={features} />} />
           <Route path="/scheduling" element={<SchedulingPage />} />
+          <Route path="/ai-advisors" element={<AIAdvisors />} />
+          {/* === Batch 11 Gaps & Frontend Mounts === */}
+          <Route path="/gap/client-noshow-prediction" element={<GapClientNoshowPredictionPage />} />
+          <Route path="/gap/workforce-attrition" element={<GapWorkforceAttritionPage />} />
+          <Route path="/gap/incident-summarizer" element={<GapIncidentSummarizerPage />} />
+          <Route path="/gap/mobile-rn-client" element={<GapMobileRnClientPage />} />
+          <Route path="/gap/client-portal" element={<GapClientPortalPage />} />
+          <Route path="/gap/payroll-connector" element={<GapPayrollConnectorPage />} />
+          <Route path="/gap/compliance-tracker" element={<GapComplianceTrackerPage />} />
+          <Route path="/gap/rate-analytics" element={<GapRateAnalyticsPage />} />
           <Route path="/:feature" element={<FeatureRoute />} />
         </Routes>
       </main>
