@@ -35,4 +35,13 @@ app.use('/api/ai-extras', require('./routes/ai-extras'));
 const PORT = process.env.BACKEND_PORT || 4003;
 app.use('/api', require('./routes/gap-features')); // === Batch 11 Gaps & Frontend Mounts ===
 
+// Custom Views (4 endpoints) — mounted BEFORE 404 fallback
+app.use('/api/custom-views', require('./routes/customViews'));
+
+// Health check (also used by deploy probes)
+app.get('/health', (req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+
+// 404 fallback (must be last)
+app.use((req, res) => res.status(404).json({ error: 'Not Found', path: req.path }));
+
 app.listen(PORT, () => console.log(`Lowe's Install Services Backend running on port ${PORT}`));

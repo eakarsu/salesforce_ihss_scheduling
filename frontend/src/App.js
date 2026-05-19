@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import FeaturePage from './pages/FeaturePage';
 import SchedulingPage from './pages/SchedulingPage';
 import AIAdvisors from './pages/AIAdvisors';
+import CustomViewsPage from './pages/CustomViewsPage';
 import Sidebar from './components/Sidebar';
 
 const features = [
@@ -241,6 +242,7 @@ function AppLayout() {
           <Route path="/" element={<Dashboard features={features} />} />
           <Route path="/scheduling" element={<SchedulingPage />} />
           <Route path="/ai-advisors" element={<AIAdvisors />} />
+          <Route path="/custom-views" element={<CustomViewsPage />} />
           {/* === Batch 11 Gaps & Frontend Mounts === */}
           <Route path="/gap/client-noshow-prediction" element={<GapClientNoshowPredictionPage />} />
           <Route path="/gap/workforce-attrition" element={<GapWorkforceAttritionPage />} />
