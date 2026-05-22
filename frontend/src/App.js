@@ -17,6 +17,11 @@ import AIAdvisors from './pages/AIAdvisors';
 import CustomViewsPage from './pages/CustomViewsPage';
 import Sidebar from './components/Sidebar';
 
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
+
 const features = [
   {
     key: 'service-territories',
@@ -192,6 +197,15 @@ const features = [
     tableColumns: ['title','work_type_name','frequency','next_suggested_date','status'],
   },
   {
+    key: 'evv-visit-verification',
+    label: 'EVV Verification',
+    icon: '\u{1F4CD}',
+    color: '#0d9488',
+    api: '/api/evv-visit-verification',
+    columns: ['appointment_number','client_name','resource_name','gps_match','clock_status','exception','status'],
+    tableColumns: ['appointment_number','client_name','resource_name','gps_match','clock_status','status'],
+  },
+  {
     key: 'scheduling-policies',
     label: 'Scheduling Policies',
     icon: '\u{2699}\uFE0F',
@@ -239,6 +253,10 @@ function AppLayout() {
       <Sidebar features={features} onLogout={handleLogout} />
       <main style={{ flex: 1, overflowY: 'auto', height: '100vh' }}>
         <Routes>
+        <Route path="/insights/timeline" element={<TimelineView />} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
           <Route path="/" element={<Dashboard features={features} />} />
           <Route path="/scheduling" element={<SchedulingPage />} />
           <Route path="/ai-advisors" element={<AIAdvisors />} />
