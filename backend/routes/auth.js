@@ -2,41 +2,34 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
-require('dotenv').config({ path: __dirname + '/../../.env' });
+const auth = require('../middleware/auth');
+const { jwtSecret, jwtIssuer, jwtAudience, jwtExpiresIn } = require('../config');
 
-router.post('/register', async (req, res) => {
+router.post('/register', (_req, res) => res.status(403).json({ error: 'Public staff registration is disabled', code: 'REGISTRATION_DISABLED' }));
+
+router.post('/login', async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
-    const hash = await bcrypt.hash(password, 10);
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    if (email.length < 3 || email.length > 255 || password.length < 1 || password.length > 72) {
+      return res.status(400).json({ error: 'Email and password are required', code: 'CREDENTIALS_REQUIRED' });
+    }
     const result = await pool.query(
-      'INSERT INTO users (name, email, password, role) VALUES ($1,$2,$3,$4) RETURNING id, name, email, role',
-      [name, email, hash, role || 'manager']
+      `SELECT id,name,email,password_hash,role FROM users
+       WHERE LOWER(email)=$1 AND is_active=TRUE`,
+      [email]
     );
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const result = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
-    if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
-
     const user = result.rows[0];
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(401).json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' });
+    }
+    const token = jwt.sign({}, jwtSecret, {
+      algorithm: 'HS256', subject: String(user.id), issuer: jwtIssuer, audience: jwtAudience, expiresIn: jwtExpiresIn,
+    });
+    res.set('Cache-Control', 'no-store').json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+  } catch (error) { next(error); }
 });
+
+router.get('/me', auth, (req, res) => res.set('Cache-Control', 'no-store').json({ user: req.user }));
 
 module.exports = router;

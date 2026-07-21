@@ -93,19 +93,6 @@ const styles = {
     marginTop: 8,
     letterSpacing: 0.3,
   },
-  autoFillBtn: {
-    width: '100%',
-    padding: '12px 24px',
-    background: '#334155',
-    border: '1px solid #475569',
-    borderRadius: 10,
-    color: '#94a3b8',
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    marginTop: 12,
-  },
   error: {
     background: '#ef444422',
     border: '1px solid #ef444444',
@@ -116,24 +103,6 @@ const styles = {
     fontWeight: 500,
     marginBottom: 20,
     textAlign: 'center',
-  },
-  divider: {
-    display: 'flex',
-    alignItems: 'center',
-    margin: '24px 0',
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    background: '#334155',
-  },
-  dividerText: {
-    fontSize: 11,
-    color: '#475569',
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
   },
 };
 
@@ -158,12 +127,6 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAutoFill = () => {
-    setEmail('admin@lowes.com');
-    setPassword('password123');
-    setError('');
   };
 
   return (
@@ -222,20 +185,6 @@ export default function Login() {
           </button>
         </form>
 
-        <div style={styles.divider}>
-          <div style={styles.dividerLine} />
-          <span style={styles.dividerText}>or</span>
-          <div style={styles.dividerLine} />
-        </div>
-
-        <button
-          style={styles.autoFillBtn}
-          onClick={handleAutoFill}
-          onMouseEnter={(e) => { e.target.style.background = '#475569'; e.target.style.color = '#e2e8f0'; }}
-          onMouseLeave={(e) => { e.target.style.background = '#334155'; e.target.style.color = '#94a3b8'; }}
-        >
-          Auto-Fill Credentials
-        </button>
       </div>
     </div>
   );

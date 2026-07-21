@@ -60,7 +60,6 @@ const tools = [
       { key: 'work_mix', label: 'Work Mix (JSON object, optional)', type: 'textarea', placeholder: '{"HVAC":0.45,"appliance":0.30,"electrical":0.25}' },
     ],
   },
-  // Apply pass 5 — backlog tools
   {
     id: 'rate-advisor',
     label: 'Labor Cost Advisor',
@@ -72,54 +71,6 @@ const tools = [
       { key: 'rates', label: 'Rates (JSON array)', type: 'textarea', placeholder: '[{"work_type":"HVAC","hourly_rate":48,"territory":"NE"}]' },
       { key: 'hours', label: 'Hours (JSON array)', type: 'textarea', placeholder: '[{"work_type":"HVAC","resource":"A. Smith","hours":32}]' },
       { key: 'territory', label: 'Territory', type: 'text', placeholder: 'all' },
-    ],
-  },
-  {
-    id: 'notify-sms',
-    label: 'SMS Notify (Twilio)',
-    icon: '\u{1F4AC}',
-    color: '#06b6d4',
-    description: 'Schedule-change SMS dispatch (requires Twilio creds)',
-    endpoint: '/api/ai/notify-sms',
-    fields: [
-      { key: 'to', label: 'To (E.164) *', type: 'text', placeholder: '+15551234567' },
-      { key: 'body', label: 'Body *', type: 'textarea', placeholder: 'Your shift on 2026-05-09 starts 30min later.' },
-    ],
-  },
-  {
-    id: 'notify-push',
-    label: 'Push Notify (FCM)',
-    icon: '\u{1F4F2}',
-    color: '#a855f7',
-    description: 'Mobile push notification (requires FCM_SERVER_KEY)',
-    endpoint: '/api/ai/notify-push',
-    fields: [
-      { key: 'device_token', label: 'Device Token *', type: 'text' },
-      { key: 'title', label: 'Title *', type: 'text', placeholder: 'Schedule update' },
-      { key: 'body', label: 'Body', type: 'textarea' },
-    ],
-  },
-  {
-    id: 'gps-track',
-    label: 'GPS Track',
-    icon: '\u{1F4CD}',
-    color: '#eab308',
-    description: 'Fleet GPS lookup (requires GPS_TRACKING_API_KEY)',
-    endpoint: '/api/ai/gps-track',
-    fields: [
-      { key: 'resource_id', label: 'Resource ID', type: 'text' },
-    ],
-  },
-  {
-    id: 'payroll-export',
-    label: 'Payroll Export',
-    icon: '\u{1F4B5}',
-    color: '#ec4899',
-    description: 'Payroll period export (requires PAYROLL_API_KEY)',
-    endpoint: '/api/ai/payroll-export',
-    fields: [
-      { key: 'period_start', label: 'Period Start *', type: 'text', placeholder: '2026-05-01' },
-      { key: 'period_end', label: 'Period End *', type: 'text', placeholder: '2026-05-15' },
     ],
   },
 ];
@@ -273,7 +224,7 @@ export default function AIAdvisors() {
       <div style={styles.header}>
         <div style={styles.title}>AI Advisors</div>
         <div style={styles.subtitle}>
-          Schedule optimization, demand prediction, and last-minute backup resourcing.
+          Experimental operator advisories only. Verify recommendations against source records before taking action.
         </div>
       </div>
 

@@ -20,7 +20,7 @@ router.post('/optimize-schedule', async (req, res) => {
     res.json(ai);
   } catch (err) {
     console.error('optimize-schedule error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 502).json({ error: err.message });
   }
 });
 
@@ -36,7 +36,7 @@ router.post('/predict-demand', async (req, res) => {
     res.json(ai);
   } catch (err) {
     console.error('predict-demand error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 502).json({ error: err.message });
   }
 });
 
@@ -52,7 +52,7 @@ router.post('/find-backup-resource', async (req, res) => {
     res.json(ai);
   } catch (err) {
     console.error('find-backup-resource error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 502).json({ error: err.message });
   }
 });
 
@@ -72,72 +72,8 @@ router.post('/skill-gap-analyzer', async (req, res) => {
     res.json(ai);
   } catch (err) {
     console.error('skill-gap-analyzer error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 502).json({ error: err.message });
   }
-});
-
-/**
- * Apply pass 5 — remaining backlog (additive)
- *
- * Documented env vars:
- *   OPENROUTER_API_KEY                    — AI generation
- *   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER — SMS dispatch
- *   FCM_SERVER_KEY                        — Firebase Cloud Messaging push
- *   GPS_TRACKING_API_KEY, GPS_TRACKING_BASE_URL              — fleet GPS
- *   PAYROLL_API_KEY, PAYROLL_PROVIDER_BASE_URL               — payroll provider
- */
-
-// NEEDS-CREDS: SMS notification dispatch (Twilio).
-router.post('/notify-sms', async (req, res) => {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const tok = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_FROM_NUMBER;
-  if (!sid || !tok || !from) {
-    return res.status(503).json({
-      error: 'SMS service unavailable',
-      missing: !sid ? 'TWILIO_ACCOUNT_SID' : !tok ? 'TWILIO_AUTH_TOKEN' : 'TWILIO_FROM_NUMBER',
-    });
-  }
-  const { to, body } = req.body || {};
-  if (!to || !body) return res.status(400).json({ error: 'to and body are required' });
-  res.json({ status: 'configured', to, from, body, note: 'Twilio credentials accepted; live dispatch deferred.' });
-});
-
-// NEEDS-CREDS: Push notification dispatch (FCM).
-router.post('/notify-push', async (req, res) => {
-  const key = process.env.FCM_SERVER_KEY;
-  if (!key) return res.status(503).json({ error: 'Push notification unavailable', missing: 'FCM_SERVER_KEY' });
-  const { device_token, title, body } = req.body || {};
-  if (!device_token || !title) return res.status(400).json({ error: 'device_token and title are required' });
-  res.json({ status: 'configured', device_token, title, body: body || '', note: 'FCM credentials accepted; live dispatch deferred.' });
-});
-
-// NEEDS-CREDS: GPS / fleet tracking.
-router.post('/gps-track', async (req, res) => {
-  const key = process.env.GPS_TRACKING_API_KEY;
-  if (!key) return res.status(503).json({ error: 'GPS tracking unavailable', missing: 'GPS_TRACKING_API_KEY' });
-  const { resource_id } = req.body || {};
-  res.json({
-    status: 'configured',
-    base_url: process.env.GPS_TRACKING_BASE_URL || 'https://api.example-gps.com',
-    resource_id: resource_id || null,
-    note: 'GPS credentials accepted; live polling deferred.',
-  });
-});
-
-// NEEDS-CREDS: Payroll provider integration (e.g., ADP, Gusto, Paychex).
-router.post('/payroll-export', async (req, res) => {
-  const key = process.env.PAYROLL_API_KEY;
-  if (!key) return res.status(503).json({ error: 'Payroll integration unavailable', missing: 'PAYROLL_API_KEY' });
-  const { period_start, period_end } = req.body || {};
-  if (!period_start || !period_end) return res.status(400).json({ error: 'period_start and period_end are required' });
-  res.json({
-    status: 'configured',
-    provider_base_url: process.env.PAYROLL_PROVIDER_BASE_URL || 'https://api.example-payroll.com',
-    period_start,
-    period_end,
-    note: 'Payroll credentials accepted; live export deferred.',
-  });
 });
 
 // PRODUCT-DECISION: Rate / labor-cost AI advisor. Computes per-territory cost
@@ -159,7 +95,7 @@ router.post('/rate-advisor', async (req, res) => {
     res.json(ai);
   } catch (err) {
     console.error('rate-advisor error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 502).json({ error: err.message });
   }
 });
 

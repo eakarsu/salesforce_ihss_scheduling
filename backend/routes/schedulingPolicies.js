@@ -41,7 +41,7 @@ Please provide a detailed capacity analysis with staffing recommendations and op
     const aiResult = await aiQuery(systemPrompt, userPrompt);
     res.json(aiResult);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 502).json({ error: err.message });
   }
 });
 

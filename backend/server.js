@@ -1,48 +1,69 @@
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config({ path: __dirname + '/../.env' });
+const helmet = require('helmet');
+const { rateLimit } = require('express-rate-limit');
+const pool = require('./db');
+const config = require('./config');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.disable('x-powered-by');
+app.set('trust proxy', config.trustProxy);
+app.use((req, res, next) => {
+  req.requestId = /^[A-Za-z0-9._:-]{8,100}$/.test(String(req.headers['x-request-id'] || '')) ? req.headers['x-request-id'] : crypto.randomUUID();
+  res.set('X-Request-ID', req.requestId);
+  const started = Date.now();
+  res.on('finish', () => console.log(JSON.stringify({ level: 'info', event: 'request', requestId: req.requestId, method: req.method, path: req.path, status: res.statusCode, durationMs: Date.now() - started })));
+  next();
+});
+app.use(helmet({ contentSecurityPolicy: config.frontendDirectory ? undefined : false }));
+app.use(cors({
+  credentials: false,
+  origin(origin, callback) {
+    if (!origin || config.corsOrigins.includes(origin)) return callback(null, true);
+    const error = new Error('Origin is not allowed'); error.status = 403; error.code = 'CORS_FORBIDDEN'; callback(error);
+  },
+}));
+app.use(express.json({ limit: '256kb', strict: true }));
 
-// Auth routes
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: config.nodeEnv === 'test' ? 1000 : 20, standardHeaders: 'draft-7', legacyHeaders: false });
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', require('./routes/auth'));
-
-// Lowe's Installation Services routes
-app.use('/api/service-territories', require('./routes/serviceTerritories'));
-app.use('/api/operating-hours', require('./routes/operatingHours'));
-app.use('/api/service-resources', require('./routes/serviceResources'));
-app.use('/api/skills', require('./routes/skills'));
-app.use('/api/service-resource-skills', require('./routes/serviceResourceSkills'));
-app.use('/api/territory-members', require('./routes/territoryMembers'));
-app.use('/api/work-types', require('./routes/workTypes'));
-app.use('/api/work-orders', require('./routes/workOrders'));
-app.use('/api/work-order-line-items', require('./routes/workOrderLineItems'));
-app.use('/api/service-appointments', require('./routes/serviceAppointments'));
-app.use('/api/resource-absences', require('./routes/resourceAbsences'));
-app.use('/api/time-sheets', require('./routes/timeSheets'));
-app.use('/api/time-sheet-entries', require('./routes/timeSheetEntries'));
-app.use('/api/shifts', require('./routes/shifts'));
-app.use('/api/service-crews', require('./routes/serviceCrews'));
-app.use('/api/assets', require('./routes/assets'));
-app.use('/api/maintenance-plans', require('./routes/maintenancePlans'));
-app.use('/api/scheduling-policies', require('./routes/schedulingPolicies'));
 app.use('/api/scheduling', require('./routes/scheduling'));
-app.use('/api/ai', require('./routes/ai'));
-app.use('/api/ai-extras', require('./routes/ai-extras'));
-app.use('/api/evv-visit-verification', require('./routes/evvVisitVerification'));
+app.use('/api/audit-logs', require('./routes/auditLogs'));
 
-const PORT = process.env.BACKEND_PORT || 4003;
-app.use('/api', require('./routes/gap-features')); // === Batch 11 Gaps & Frontend Mounts ===
+app.get(['/health', '/api/health'], async (_req, res, next) => {
+  try {
+    await pool.query('SELECT 1');
+    res.set('Cache-Control', 'no-store').json({ status: 'ok', database: 'reachable', service: 'installation-scheduling' });
+  } catch (error) { error.status = 503; error.code = 'DATABASE_UNAVAILABLE'; next(error); }
+});
 
-// Custom Views (4 endpoints) — mounted BEFORE 404 fallback
-app.use('/api/custom-views', require('./routes/customViews'));
+app.use('/api', (_req, res) => res.status(404).json({ error: 'API route not found', code: 'NOT_FOUND' }));
+if (fs.existsSync(config.frontendDirectory)) {
+  app.use(express.static(config.frontendDirectory, { index: false, maxAge: config.nodeEnv === 'production' ? '1h' : 0 }));
+  app.get('*splat', (_req, res) => res.sendFile(path.join(config.frontendDirectory, 'index.html')));
+}
+app.use((_req, res) => res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' }));
+app.use((error, req, res, _next) => {
+  const status = error.status || (error.type === 'entity.too.large' ? 413 : 500);
+  const code = error.code && !/^\d+$/.test(String(error.code)) ? error.code : status === 413 ? 'BODY_TOO_LARGE' : 'INTERNAL_ERROR';
+  if (status >= 500) console.error(JSON.stringify({ level: 'error', event: 'request_failed', requestId: req.requestId, code, message: error.message }));
+  res.status(status).json({ error: status >= 500 ? 'Internal server error' : error.message, code, requestId: req.requestId });
+});
 
-// Health check (also used by deploy probes)
-app.get('/health', (req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+let server;
+if (require.main === module) {
+  server = app.listen(config.port, config.host, () => console.log(JSON.stringify({ level: 'info', event: 'server_started', host: config.host, port: config.port })));
+  const shutdown = (signal) => {
+    console.log(JSON.stringify({ level: 'info', event: 'shutdown_started', signal }));
+    server.close(() => pool.end().finally(() => process.exit(0)));
+    setTimeout(() => process.exit(1), 10000).unref();
+  };
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+}
 
-// 404 fallback (must be last)
-app.use((req, res) => res.status(404).json({ error: 'Not Found', path: req.path }));
-
-app.listen(PORT, () => console.log(`Lowe's Install Services Backend running on port ${PORT}`));
+module.exports = app;

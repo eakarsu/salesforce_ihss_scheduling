@@ -332,6 +332,7 @@ export default function SchedulingPage() {
   // Step 5 state
   const [booking, setBooking] = useState(null);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingKey, setBookingKey] = useState(() => crypto.randomUUID());
 
   const [error, setError] = useState('');
 
@@ -383,10 +384,11 @@ export default function SchedulingPage() {
       const res = await api.post('/api/scheduling/book', {
         work_order_number: selectedWO.work_order_number,
         resource_name: selectedResource.resource_name,
-        scheduled_start: selectedSlot.start_datetime,
-        scheduled_end: selectedSlot.end_datetime,
+        scheduled_start: selectedSlot.scheduled_start,
+        scheduled_end: selectedSlot.scheduled_end,
+        expected_work_order_version: slotsData.work_order_version,
         lead_data: leadData,
-      });
+      }, { headers: { 'Idempotency-Key': bookingKey } });
       setBooking(res.data);
       setStep(5);
     } catch (err) {
@@ -404,6 +406,7 @@ export default function SchedulingPage() {
     setSelectedResource(null);
     setSelectedSlot(null);
     setBooking(null);
+    setBookingKey(crypto.randomUUID());
     setLeadData({ contact_name: '', contact_phone: '', contact_email: '', budget: '', account_name: '', region: '', market: '', district: '' });
     setError('');
     fetchWorkOrders();
@@ -666,6 +669,8 @@ export default function SchedulingPage() {
             type="date"
             style={styles.dateInput}
             value={selectedDate}
+            min={new Date().toISOString().slice(0, 10)}
+            max={new Date(Date.now() + 366 * 86400000).toISOString().slice(0, 10)}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
         </div>
@@ -752,6 +757,7 @@ export default function SchedulingPage() {
                       onClick={() => {
                         setSelectedResource(resource);
                         setSelectedSlot(slot);
+                        setBookingKey(crypto.randomUUID());
                       }}
                     >
                       {slot.start} - {slot.end}
@@ -914,12 +920,6 @@ export default function SchedulingPage() {
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button style={styles.btnPrimary} onClick={resetWizard}>
               Schedule Another
-            </button>
-            <button
-              style={styles.btnSecondary}
-              onClick={() => window.location.href = '/service-appointments'}
-            >
-              View All Appointments
             </button>
           </div>
         </div>

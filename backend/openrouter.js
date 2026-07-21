@@ -6,10 +6,9 @@ async function aiQuery(systemPrompt, userPrompt) {
   const model = process.env.OPENROUTER_MODEL || 'anthropic/claude-haiku-4.5';
 
   if (!apiKey || apiKey === 'your_openrouter_api_key_here') {
-    return {
-      success: false,
-      result: 'OpenRouter API key not configured. Please add your API key to the .env file.',
-    };
+    const error = new Error('AI service unavailable: OPENROUTER_API_KEY is not configured');
+    error.statusCode = 503;
+    throw error;
   }
 
   try {
@@ -33,14 +32,14 @@ async function aiQuery(systemPrompt, userPrompt) {
     });
 
     const data = await response.json();
-    if (data.error) {
-      return { success: false, result: data.error.message || 'AI API error' };
-    }
+    if (!response.ok || data.error) throw new Error(data.error?.message || `AI provider returned ${response.status}`);
 
     const content = data.choices?.[0]?.message?.content || 'No response from AI';
     return { success: true, result: content, model: data.model, usage: data.usage };
   } catch (err) {
-    return { success: false, result: 'Failed to connect to AI service: ' + err.message };
+    const error = new Error(`AI provider request failed: ${err.message}`);
+    error.statusCode = 502;
+    throw error;
   }
 }
 

@@ -1,71 +1,29 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-cd "$(dirname "$0")"
+project_dir="$(cd "$(dirname "$0")" && pwd)"
+cd "${project_dir}"
+env_file="${ENV_FILE:-.env}"
+if [[ -f "${env_file}" ]]; then set -a; source "${env_file}"; set +a; fi
 
-echo "================================================"
-echo "  Lowe's Installation Services Platform"
-echo "  Starting up..."
-echo "================================================"
-echo ""
-
-# Kill any processes on our ports
-echo "[1/6] Cleaning up ports 4002 and 4003..."
-lsof -ti:4002 | xargs kill -9 2>/dev/null || true
-lsof -ti:4003 | xargs kill -9 2>/dev/null || true
-sleep 1
-echo "  Ports cleared."
-
-# Check PostgreSQL
-echo ""
-echo "[2/6] Checking PostgreSQL..."
-if ! pg_isready -q 2>/dev/null; then
-  echo "  PostgreSQL is not running. Attempting to start..."
-  brew services start postgresql 2>/dev/null || pg_ctl start -D /usr/local/var/postgres 2>/dev/null || true
-  sleep 2
+if [[ "${NODE_ENV:-production}" == "test" ]]; then
+  CORS_ORIGINS="${CORS_ORIGINS:-http://127.0.0.1:${FRONTEND_PORT:-3000}}"
+  export CORS_ORIGINS
 fi
-echo "  PostgreSQL is ready."
 
-# Create database if it doesn't exist
-echo ""
-echo "[3/6] Setting up database..."
-psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname='lowes_install_scheduling'" | grep -q 1 || \
-  createdb -U postgres lowes_install_scheduling 2>/dev/null || true
-echo "  Database lowes_install_scheduling ready."
+: "${DATABASE_URL:?DATABASE_URL is required}"
+: "${JWT_SECRET:?JWT_SECRET is required}"
+: "${CORS_ORIGINS:?CORS_ORIGINS is required}"
+if [[ ${#JWT_SECRET} -lt 32 ]]; then echo 'JWT_SECRET must contain at least 32 characters.' >&2; exit 2; fi
+if [[ ! -d backend/node_modules || ! -f frontend/dist/index.html ]]; then echo 'Install dependencies and create the production frontend build before startup.' >&2; exit 2; fi
 
-# Install dependencies
-echo ""
-echo "[4/6] Installing dependencies..."
-cd backend && npm install --silent 2>/dev/null && cd ..
-cd frontend && npm install --silent 2>/dev/null && cd ..
-echo "  Dependencies installed."
+app_port="${BACKEND_PORT:-4003}"
+if [[ ! "${app_port}" =~ ^[0-9]+$ ]] || (( app_port < 1024 || app_port > 65535 )); then
+  echo 'BACKEND_PORT must be an unprivileged TCP port.' >&2
+  exit 2
+fi
+if lsof -nP -iTCP:"${app_port}" -sTCP:LISTEN >/dev/null 2>&1; then echo "Port ${app_port} is occupied; refusing to stop another process." >&2; exit 2; fi
 
-# Seed database
-echo ""
-echo "[5/6] Seeding database with Lowe's installation services data..."
-cd backend && node seed.js && cd ..
-echo "  Database seeded successfully."
-
-# Start servers
-echo ""
-echo "[6/6] Starting servers with hot reload..."
-echo ""
-echo "================================================"
-echo "  Backend:  http://localhost:4003"
-echo "  Frontend: http://localhost:4002"
-echo "  Login:    admin@lowes.com / password123"
-echo "================================================"
-echo ""
-
-# Start backend with nodemon for hot reload
-cd backend && npx nodemon server.js &
-BACKEND_PID=$!
-
-# Start frontend with React dev server (auto hot reload)
-cd frontend && PORT=4002 npm start &
-FRONTEND_PID=$!
-
-# Handle shutdown
-trap "echo 'Shutting down...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit 0" SIGINT SIGTERM
-
-wait
+node backend/db/migrate.js --check
+export FRONTEND_DIST="${FRONTEND_DIST:-${project_dir}/frontend/dist}"
+exec node backend/server.js
