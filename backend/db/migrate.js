@@ -4,7 +4,7 @@ const path = require('path');
 const pool = require('../db');
 
 const migrationDirectory = path.join(__dirname, 'migrations');
-const expectedRelations = ['users','operating_hours','service_territories','service_resources','service_resource_skills','territory_members','work_types','work_orders','resource_absences','service_appointments','scheduling_audit_events'];
+const expectedRelations = ['users','operating_hours','service_territories','service_resources','service_resource_skills','territory_members','work_types','work_orders','resource_absences','service_appointments','scheduling_audit_events','ai_provider_receipts'];
 
 async function verifySchema(client) {
   const missingRelations = [];

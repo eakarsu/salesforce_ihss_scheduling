@@ -8,7 +8,7 @@ after(async () => { await pool.end(); });
 test('migration replay is idempotent and the expected schema is present', async () => {
   const result = await migrate();
   assert.equal(result.newlyApplied, 0);
-  assert.deepEqual(result.verified, { relations: 11, columns: 5, controls: 2 });
+  assert.deepEqual(result.verified, { relations: 12, columns: 5, controls: 2 });
 });
 
 test('schema verification detects drift without retaining the destructive probe', async () => {

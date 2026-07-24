@@ -31,6 +31,7 @@ app.use(express.json({ limit: '256kb', strict: true }));
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: config.nodeEnv === 'test' ? 1000 : 20, standardHeaders: 'draft-7', legacyHeaders: false });
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/runtime-ai', require('./routes/runtimeAI'));
 app.use('/api/scheduling', require('./routes/scheduling'));
 app.use('/api/audit-logs', require('./routes/auditLogs'));
 
