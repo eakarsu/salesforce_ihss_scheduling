@@ -90,7 +90,7 @@ fi
 : "${JWT_SECRET:?JWT_SECRET is required}"
 : "${CORS_ORIGINS:?CORS_ORIGINS is required}"
 if [[ ${#JWT_SECRET} -lt 32 ]]; then echo 'JWT_SECRET must contain at least 32 characters.' >&2; exit 2; fi
-if [[ ! -d backend/node_modules || ! -f frontend/dist/index.html ]]; then echo 'Install dependencies and create the production frontend build before startup.' >&2; exit 2; fi
+if [[ ! -d backend/node_modules || ! -d frontend/node_modules ]]; then echo 'Install runtime dependencies before startup.' >&2; exit 2; fi
 
 app_port="${BACKEND_PORT:-4003}"
 ui_port="${FRONTEND_PORT:-3000}"
@@ -100,6 +100,8 @@ for port in "${app_port}" "${ui_port}"; do
 done
 
 node backend/db/migrate.js --check
+export VITE_API_URL=/api
+npm --prefix frontend run build
 export FRONTEND_DIST="${FRONTEND_DIST:-${project_dir}/frontend/dist}"
 
 cleanup() {
